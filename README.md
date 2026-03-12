@@ -1,141 +1,194 @@
-# 파일 업로드 시스템
+# File Upload System
 
-시스템 디자인 연습을 위한 분산 파일 업로드 및 비동기 처리 시스템입니다.
+대용량 파일 업로드 아키텍처를 이해하기 위한 간단한 분산 시스템
+예제입니다.
 
-## 시스템 아키텍처
+이 프로젝트는 파일 업로드 처리와 파일 후처리를 분리한 비동기 구조를
+구현하며\
+객체 저장소, 메시지 큐, 워커 기반 처리 모델을 사용합니다.
 
-```
-클라이언트 (curl / HTTP)
+------------------------------------------------------------------------
+
+# Design Goals
+
+이 프로젝트는 다음과 같은 분산 시스템 패턴을 이해하기 위해
+작성되었습니다.
+
+-   파일 업로드와 파일 처리 로직의 분리
+-   Object Storage 기반 파일 저장 구조
+-   Message Queue 기반 비동기 처리
+-   Worker 기반 백그라운드 작업 처리
+-   서비스 간 느슨한 결합(Decoupling)
+
+이 구조는 실제 대규모 시스템에서 다음과 같은 방식으로 확장될 수
+있습니다.
+
+-   Presigned URL 기반 Direct Upload
+-   Multipart / Chunk Upload
+-   Parallel Upload
+-   Worker Auto Scaling
+-   Dead Letter Queue(DLQ)
+-   CDN 기반 파일 배포
+
+------------------------------------------------------------------------
+
+# System Architecture
+
+    Client (HTTP / curl)
+          │
+          ▼
+    Upload Service (Spring Boot REST API, :8080)
+          │
+          ├──▶ MinIO (Object Storage, :9000)
+          ├──▶ PostgreSQL (Metadata DB, :5432)
+          └──▶ Redis (Message Queue, :6379)
+                   │
+                   ▼
+            Worker Service
+          (Background Processing)
+
+이 시스템은 업로드 요청을 처리하는 **Upload Service**와\
+파일 후처리를 수행하는 **Worker Service**를 분리한 구조입니다.
+
+업로드된 파일은 Object Storage에 저장되고\
+파일 처리 작업은 Message Queue를 통해 비동기적으로 수행됩니다.
+
+------------------------------------------------------------------------
+
+# Service Components
+
+  Service          Technology    Description
+  ---------------- ------------- ----------------------
+  upload-service   Spring Boot   파일 업로드 API
+  worker-service   Spring Boot   백그라운드 작업 처리
+  postgres         PostgreSQL    파일 메타데이터 저장
+  redis            Redis         서비스 간 메시지 큐
+  minio            MinIO         S3 호환 객체 저장소
+
+------------------------------------------------------------------------
+
+# File Upload Flow
+
+1.  Client가 `POST /upload` 요청으로 파일 업로드
+2.  Upload Service가 파일을 **MinIO(Object Storage)** 에 저장
+3.  Upload Service가 **PostgreSQL**에 메타데이터 저장 (`UPLOADED`)
+4.  Upload Service가 **Redis Queue**에 작업 메시지 추가
+5.  Worker Service가 메시지를 소비
+6.  Worker가 파일 처리 수행 후 상태 업데이트
+
+------------------------------------------------------------------------
+
+# Queue Processing
+
+Redis 리스트 `file:process:queue`가 작업 큐 역할 수행
+
+Upload Service
+
+    LPUSH file:process:queue <file_id>
+
+Worker Service
+
+    BRPOP file:process:queue
+
+Worker 동작
+
+1.  파일 메타데이터 조회
+2.  상태 `PROCESSING` 업데이트
+3.  파일 처리 시뮬레이션
+4.  상태 `PROCESSED` 업데이트
+
+------------------------------------------------------------------------
+
+# Status Flow
+
+    UPLOADED
        │
        ▼
-Upload Service (Spring Boot REST API, 포트 8080)
+    PROCESSING
        │
-       ├──▶ MinIO (S3 호환 객체 저장소, 포트 9000)
-       ├──▶ PostgreSQL (메타데이터 저장소, 포트 5432)
-       └──▶ Redis Queue (작업 큐, 포트 6379)
-                │
-                ▼
-         Worker Service (큐 소비 및 메타데이터 상태 업데이트)
-```
+       ▼
+    PROCESSED
 
-### 서비스 구성
+------------------------------------------------------------------------
 
-| 서비스          | 기술         | 역할                              |
-|----------------|-------------|----------------------------------|
-| upload-service | Spring Boot | 파일 업로드 REST API               |
-| worker         | Spring Boot | 백그라운드 작업 처리기              |
-| postgres       | PostgreSQL  | 파일 메타데이터 저장               |
-| redis          | Redis       | 서비스 간 메시지 큐                |
-| minio          | MinIO       | S3 호환 객체 저장소                |
+# Database Schema
 
-## 프로젝트 구조
-
-```
-file-upload-system/
-├── docker-compose.yml                 # 전체 인프라 정의
-├── README.md
-├── init-db/
-│   └── init.sql                       # DB 테이블 생성 스크립트
-├── upload-service/
-│   ├── Dockerfile
-│   ├── pom.xml
-│   └── src/main/
-│       ├── java/com/example/upload/
-│       │   ├── UploadServiceApplication.java
-│       │   ├── config/MinioConfig.java           # MinIO 클라이언트 설정
-│       │   ├── controller/UploadController.java  # POST /upload 엔드포인트
-│       │   ├── model/FileMetadata.java           # JPA 엔티티
-│       │   ├── repository/FileMetadataRepository.java
-│       │   └── service/UploadService.java        # 업로드 핵심 로직
-│       └── resources/application.yml
-└── worker-service/
-    ├── Dockerfile
-    ├── pom.xml
-    └── src/main/
-        ├── java/com/example/worker/
-        │   ├── WorkerServiceApplication.java
-        │   ├── model/FileMetadata.java
-        │   ├── repository/FileMetadataRepository.java
-        │   └── service/WorkerService.java        # 큐 소비 및 처리 로직
-        └── resources/application.yml
-```
-
-## 업로드 흐름
-
-1. 클라이언트가 `POST /upload` 요청으로 멀티파트 파일을 전송
-2. Upload Service가 파일 바이너리를 **MinIO** (객체 저장소)에 저장
-3. Upload Service가 **PostgreSQL**에 메타데이터 레코드 삽입 (상태: `UPLOADED`)
-4. Upload Service가 메타데이터 ID를 **Redis** 리스트(큐)에 푸시
-5. Upload Service가 클라이언트에게 메타데이터(id, filename, size, status) 응답 반환
-
-## 큐와 워커의 작업 처리 방식
-
-- **Redis 리스트** `file:process:queue`가 단순 FIFO 작업 큐 역할 수행
-- Upload Service는 `LPUSH`(왼쪽 삽입)로 파일 ID를 큐에 추가
-- Worker Service는 `BRPOP`(블로킹 오른쪽 추출)으로 파일 ID를 꺼내 FIFO 순서 보장
-- 워커가 작업을 수신하면:
-  1. PostgreSQL에서 파일 메타데이터 조회
-  2. 상태를 `PROCESSING`으로 업데이트
-  3. 파일 처리 시뮬레이션 (3초 대기)
-  4. 상태를 `PROCESSED`로 업데이트
-- 워커는 무한 루프로 실행되며, 큐에 작업이 없으면 블로킹 대기
-
-### 상태 전이
-
-```
-UPLOADED  ──▶  PROCESSING  ──▶  PROCESSED
-```
-
-## 데이터베이스 스키마
-
-```sql
+``` sql
 CREATE TABLE file_metadata (
-    id         BIGSERIAL PRIMARY KEY,
-    filename   VARCHAR(255) NOT NULL,
-    size       BIGINT NOT NULL,
-    status     VARCHAR(50) NOT NULL DEFAULT 'UPLOADED',
+    id BIGSERIAL PRIMARY KEY,
+    filename VARCHAR(255) NOT NULL,
+    size BIGINT NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'UPLOADED',
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 ```
 
-## 실행 방법
+------------------------------------------------------------------------
 
-### 사전 요구사항
+# Running the System
 
-- Docker 및 Docker Compose
+## Requirements
 
-### 시작
+-   Docker
+-   Docker Compose
 
-```bash
-docker compose up --build
-```
+------------------------------------------------------------------------
 
-5개 서비스가 모두 실행됩니다. 업로드 API는 `http://localhost:8080`에서 사용 가능합니다.
+## Start
 
-### 업로드 테스트
+    docker compose up --build
 
-```bash
-# 파일 업로드
-curl -F "file=@testfile.txt" http://localhost:8080/upload
+Upload API
 
-# 응답 예시
-# {"id":1,"filename":"testfile.txt","size":1234,"status":"UPLOADED"}
-```
+    http://localhost:8080
 
-몇 초 후 워커가 파일을 처리하고 상태가 `PROCESSED`로 변경됩니다.
+------------------------------------------------------------------------
 
-### MinIO 콘솔
+## Upload Test
 
-MinIO 웹 콘솔: `http://localhost:9001` (로그인: `minioadmin` / `minioadmin`)
+    curl -F "file=@testfile.txt" http://localhost:8080/upload
 
-### 종료
+Example Response
 
-```bash
-docker compose down
-```
+    {
+     "id":1,
+     "filename":"testfile.txt",
+     "size":1234,
+     "status":"UPLOADED"
+    }
 
-저장된 데이터까지 삭제하려면:
+몇 초 후 Worker가 파일을 처리하고 상태가 `PROCESSED`로 변경됩니다.
 
-```bash
-docker compose down -v
-```
+------------------------------------------------------------------------
+
+# MinIO Console
+
+    http://localhost:9001
+
+Login
+
+    minioadmin
+    minioadmin
+
+------------------------------------------------------------------------
+
+# Shutdown
+
+    docker compose down
+
+데이터까지 삭제
+
+    docker compose down -v
+
+------------------------------------------------------------------------
+
+# Architecture Extensions
+
+이 시스템은 다음과 같은 방식으로 확장할 수 있습니다.
+
+-   Presigned URL 기반 Direct Upload
+-   Multipart / Chunk Upload
+-   Parallel Upload
+-   Worker Auto Scaling
+-   Dead Letter Queue(DLQ)
+-   CDN 기반 파일 배포
