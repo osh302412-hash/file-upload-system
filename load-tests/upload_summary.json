@@ -1,0 +1,241 @@
+{
+    "metrics": {
+        "simple_upload_duration": {
+            "min": 13,
+            "med": 24,
+            "max": 255,
+            "p(90)": 29,
+            "p(95)": 68,
+            "avg": 29.248700173310226,
+            "thresholds": {
+                "p(95)<3000": false
+            }
+        },
+        "checks": {
+            "passes": 4758,
+            "fails": 980,
+            "value": 0.8292087835482747
+        },
+        "chunk_upload_total_duration": {
+            "max": 389,
+            "p(90)": 297.1,
+            "p(95)": 318.0999999999999,
+            "avg": 193.74285714285713,
+            "min": 107,
+            "med": 171,
+            "thresholds": {
+                "p(95)<5000": false
+            }
+        },
+        "http_req_duration{expected_response:true}": {
+            "avg": 34.2133741750832,
+            "min": 3.780936,
+            "med": 26.178883,
+            "max": 254.500606,
+            "p(90)": 64.3225047,
+            "p(95)": 74.94741344999998
+        },
+        "iterations": {
+            "count": 1644,
+            "rate": 7.465412570751754
+        },
+        "http_req_duration": {
+            "med": 25.090546,
+            "max": 254.500606,
+            "p(90)": 62.0595992,
+            "p(95)": 73.1769897,
+            "avg": 30.662018408158268,
+            "min": 2.359455
+        },
+        "http_req_blocked": {
+            "avg": 0.03427784904738641,
+            "min": 0.001963,
+            "med": 0.0048895,
+            "max": 1.097725,
+            "p(90)": 0.18895770000000006,
+            "p(95)": 0.23189035
+        },
+        "data_received": {
+            "rate": 4122.2064665459875,
+            "count": 907774
+        },
+        "group_duration": {
+            "min": 13.527223,
+            "med": 25.6928435,
+            "max": 389.437633,
+            "p(90)": 231.83076180000003,
+            "p(95)": 267.24420514999986,
+            "avg": 78.65501981691001
+        },
+        "http_req_waiting": {
+            "p(90)": 61.69567040000001,
+            "p(95)": 72.87119855,
+            "avg": 30.36533382755259,
+            "min": 2.227718,
+            "med": 24.7711835,
+            "max": 254.230621
+        },
+        "http_reqs": {
+            "count": 4094,
+            "rate": 18.590875343465743
+        },
+        "http_req_sending": {
+            "p(90)": 0.1965887,
+            "p(95)": 0.26321585,
+            "avg": 0.13242071152906706,
+            "min": 0.008065,
+            "med": 0.134081,
+            "max": 4.020513
+        },
+        "http_req_receiving": {
+            "avg": 0.16426386907669754,
+            "min": 0.022422,
+            "med": 0.1306945,
+            "max": 3.248177,
+            "p(90)": 0.2269287,
+            "p(95)": 0.28420054999999983
+        },
+        "vus": {
+            "value": 1,
+            "min": 0,
+            "max": 20
+        },
+        "vus_max": {
+            "value": 20,
+            "min": 20,
+            "max": 20
+        },
+        "iteration_duration": {
+            "med": 1026.5138665,
+            "max": 1389.809034,
+            "p(90)": 1232.4481018000001,
+            "p(95)": 1267.8016724999998,
+            "avg": 1079.3141401271282,
+            "min": 1014.267575
+        },
+        "http_req_connecting": {
+            "p(90)": 0.11591600000000002,
+            "p(95)": 0.14728484999999997,
+            "avg": 0.019045537371763552,
+            "min": 0,
+            "med": 0,
+            "max": 1.002907
+        },
+        "completed_uploads": {
+            "count": 1154,
+            "rate": 5.2403200162089565
+        },
+        "upload_error_rate": {
+            "passes": 490,
+            "fails": 1154,
+            "thresholds": {
+                "rate<0.05": true
+            },
+            "value": 0.2980535279805353
+        },
+        "http_req_tls_handshaking": {
+            "max": 0,
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0,
+            "min": 0,
+            "med": 0
+        },
+        "http_req_failed": {
+            "passes": 490,
+            "fails": 3604,
+            "value": 0.11968734733756717
+        },
+        "data_sent": {
+            "count": 634159068,
+            "rate": 2879719.6338828565
+        }
+    },
+    "root_group": {
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {
+            "simple_upload": {
+                "name": "simple_upload",
+                "path": "::simple_upload",
+                "id": "56410209130cd85e903c05960204df86",
+                "groups": {},
+                "checks": {
+                        "simple upload 200": {
+                            "id": "1baf17d7ca5e5ecf595f1ce36949276f",
+                            "passes": 1154,
+                            "fails": 0,
+                            "name": "simple upload 200",
+                            "path": "::simple_upload::simple upload 200"
+                        },
+                        "has file id": {
+                            "path": "::simple_upload::has file id",
+                            "id": "9674988a345ffc30c678ff759257b892",
+                            "passes": 1154,
+                            "fails": 0,
+                            "name": "has file id"
+                        }
+                    }
+            },
+            "chunk_upload": {
+                "id": "f216132630e8255b980a553e7a598c16",
+                "groups": {},
+                "checks": {
+                        "session created": {
+                            "passes": 490,
+                            "fails": 0,
+                            "name": "session created",
+                            "path": "::chunk_upload::session created",
+                            "id": "988961f895ff1b65d3f579b2e54d8c48"
+                        },
+                        "chunk 0 ok": {
+                            "id": "12d78a33395a47929cf83b4d5309c319",
+                            "passes": 490,
+                            "fails": 0,
+                            "name": "chunk 0 ok",
+                            "path": "::chunk_upload::chunk 0 ok"
+                        },
+                        "chunk 1 ok": {
+                            "path": "::chunk_upload::chunk 1 ok",
+                            "id": "ffb4984b5ff2027863e78d1715d048e2",
+                            "passes": 490,
+                            "fails": 0,
+                            "name": "chunk 1 ok"
+                        },
+                        "chunk 2 ok": {
+                            "name": "chunk 2 ok",
+                            "path": "::chunk_upload::chunk 2 ok",
+                            "id": "7428410a5909f4637f7731d3147ba1ea",
+                            "passes": 490,
+                            "fails": 0
+                        },
+                        "chunk 3 ok": {
+                            "name": "chunk 3 ok",
+                            "path": "::chunk_upload::chunk 3 ok",
+                            "id": "3805c5c82c15ce9a60f39df7e04b3287",
+                            "passes": 490,
+                            "fails": 0
+                        },
+                        "chunk upload complete": {
+                            "name": "chunk upload complete",
+                            "path": "::chunk_upload::chunk upload complete",
+                            "id": "ee083193501a269839ae29a046f8d3aa",
+                            "passes": 0,
+                            "fails": 490
+                        },
+                        "status UPLOADED": {
+                            "name": "status UPLOADED",
+                            "path": "::chunk_upload::status UPLOADED",
+                            "id": "5827325b282993412a188b033fbcbae8",
+                            "passes": 0,
+                            "fails": 490
+                        }
+                    },
+                "name": "chunk_upload",
+                "path": "::chunk_upload"
+            }
+        },
+        "checks": {},
+        "name": "",
+        "path": ""
+    }
+}
